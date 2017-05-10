@@ -51,12 +51,12 @@ class battery_control(appapi.my_appapi):
     self.log("about to set time")
     time=self.datetime()
     self.log("time={}".format(time))
-    #self.run_every(self.timer_handler,time,3*60)
+    self.run_every(self.timer_handler,time,30*60)
     self.log("event scheduled")
     self.check_battery_state()
     self.log("back from check battery state")
      
-  def timer_handler(self,**kwargs):
+  def timer_handler(self,kwargs):
     self.check_battery_state()
 
   def state_handler(self,entity,attribute,old,new,kwargs):
