@@ -16,64 +16,80 @@
 #  module=battery_control
 #  class=battery_control
 #
-#  Setup the self.batteries dictionary below as follows
-#  self.batteries={"<HA Sensor name for battery state>":{"attribute":"<Attribute name (None if it's the default state for the sensor>",
+#  Setup the self.batteries JSON string below as follows All non-numeric values must be in double quotes
+#  self.batteries={"<HA Sensor name for battery state>":{"attribute":"<Attribute name>",
 #                                                        "low":<low level>,
-#                                                        "med":<medium level>,
-#                                                        "notify":"<email address to notify on low level>"},
-#                  "<repeat for next sensor>":{"attribute":"<Attribute name (None if it's the default state for the sensor>",
+#                                                        "mid":<medium level>,
+#                                                        "notify":"<HA Notification Component>"},
+#                  "<repeat for next sensor>":{"attribute":"<Attribute name>",
 #                                                        "low":<low level>,
-#                                                        "med":<medium level>,
-#                                                        "notify":"<email address to notify on low level>"}
+#                                                        "mid":<medium level>,
+#                                                        "notify":"<HA Notification Component>"}
 #                  }
-#
+#       
 #######################################################
-import my_appapi as appapi
+import appdaemon.appapi as appapi
 import datetime
 import time
+import json
                
-class battery_control(appapi.my_appapi):
+class battery_control(appapi.AppDaemon):
 
   def initialize(self):
     # self.LOGLEVEL="DEBUG"
     self.log("battery_control App")
-  
-    self.batteries={"sensor.den_sensor_battery":{"attribute":None,"low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "sensor.office_sensor_battery":{"attribute":None,"low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "sensor.ring_front_door_battery":{"attribute":None,"low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "zwave.aeotec_zw074_multisensor_gen5_14":{"attribute":"battery_level","low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "zwave.office_door_4":{"attribute":"battery_level","low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "zwave.toolcabinetleft_6":{"attribute":"battery_level","low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "sensor.ring_front_door_battery":{"attribute":None,"low":10,"med":60,"notify":"chip.cox@coxdogs.com"},
-                    "zwave.toolcabinetright_7":{"attribute":"battery_level","low":10,"med":60,"notify":"chip.cox@coxdogs.com"}}
+    if "full_img" in self.args:
+      self.full=self.args["full_img"]
+    else:
+      self.log("error full_img must be specified in appdaemon.cfg")
+    if "mid_img" in self.args:
+      self.mid=self.args["mid_img"]
+    else:
+      self.log("error mid_img must be specified in appdaemon.cfg")
+    if "low_img" in self.args:
+      self.low=self.args["low_img"]
+    else:
+      self.log("error low_img must be specified in appdaemon.cfg")
+    self.batteries={"empty":"list"}
+    if "batteries" in self.args:
+      battery_data=""
+      battery_data=self.args["batteries"]
+      self.batteries=json.loads(battery_data)
+    else:
+      self.log("error batteries must be specified in appdaemon.cfg")
+    self.log("batteries={}".format(self.batteries))
     for s in self.batteries:
       self.listen_state(self.state_handler,s,attribute=self.batteries[s]["attribute"])
-    self.log("about to set time")
-    time=self.datetime()
-    self.log("time={}".format(time))
-    self.run_every(self.timer_handler,time,30*60)
-    self.log("event scheduled")
     self.check_battery_state()
-    self.log("back from check battery state")
      
-  def timer_handler(self,kwargs):
-    self.check_battery_state()
-
   def state_handler(self,entity,attribute,old,new,kwargs):
-    self.check_battery_state()
-
+    currentpic=self.get_state(entity,attribute="entity_picture")
+    if currentpic==None:
+      self.check_battery_state()
+   
   def check_battery_state(self,**kwargs):
     for b in self.batteries:
       s=self.batteries[b]["attribute"]
       result=self.get_state(b,s)
-      self.log("{},{}={}".format(b,s,result))
-      if int(float(result))>int(float(self.batteries[b]["med"])):
+      self.log("Battery {} is at {}%".format(b,result))
+      if int(float(result))>int(self.batteries[b]["mid"]):
         # set green picture      
-        self.set_state(b,attributes={"entity_picture":"/local/full_battery_icon.jpg"})
-      elif int(float(result))>int(float(self.batteries[b]["low"])):
+        self.set_state(b,attributes={"entity_picture":self.full})
+      elif int(float(result))>int(self.batteries[b]["low"]):
         # set yellow picture
-        self.set_state(b,attributes={"entity_picture":"/local/mid_battery_icon.jpg"})
+        self.set_state(b,attributes={"entity_picture":self.mid})
       else:
         # set red picture
-        self.set_state(b,attributes={"entity_picture":"/local/low_battery_icon.jpg"})
-
+        self.set_state(b,attributes={"entity_picture":self.low})
+        msg="{} battery is at {}%.  Please replace/recharge the batteries".format(b,result)
+        if not "last_notification" in self.batteries[b]:
+          self.batteries[b]["last_notification"]=self.date()-datetime.timedelta(days=1)
+        if self.batteries[b]["last_notification"]<self.date():
+          self.batteries[b]["last_notification"]=self.date()
+          try:
+            self.log("Sending low battery alert for {} to {}".format(b,self.batteries[b]["notify"]))
+            self.notify(msg,name=self.batteries[b]["notify"],title="low battery warning")
+          except:
+            self.log("{} notify failed {}".format(b,self.batteries[b]["notify"]))
+            pass
+      self.log("batteries={}".format(self.batteries[b]))
