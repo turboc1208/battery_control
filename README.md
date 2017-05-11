@@ -25,6 +25,11 @@ batteries={"sensor.den_sensor_battery":{"attribute":"state","low":10,"mid":60,"n
            "sensor.ring_front_door_battery":{"attribute":None,"low":10,"mid":60,"notify":"EmailChip"},
            "zwave.toolcabinetright_7":{"attribute":"battery_level","low":10,"mid":60,"notify":"EmailChip"}}
 </pre>
+<ul>
+<li>full_img : image to display for high or full battery levels
+<li>mid_img : image to display for mid battery levels
+<li>low_img : image to display for low battery levels
+</ul><p>
   Setup the self.batteries JSON string below as follows, remember to use double quotes.
   <pre>
   self.batteries={"&LTHA Sensor name for battery state&GT":
@@ -48,4 +53,7 @@ high battery level > mid
 mid >= mid battery level > low
 <li>low : Values less than or equal to low are considered Low<br>
 low >= low battery level
+<li>notify : HA notify component to send message.  Only one notify method is allowed per
+sensor but different sensors can use different notify methods.  Sensor A can send a page
+sensor b can send an email.  Just set up notify components in you HA configuration.yaml file.
 </ul>
