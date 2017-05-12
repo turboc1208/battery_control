@@ -83,10 +83,10 @@ class battery_control(appapi.AppDaemon):
       s=self.batteries[b]["attribute"]
       result=self.get_state(b,s)
       self.log("Battery {} is at {}%".format(b,result))
-      if result==None:
+      if (result==None) or (result==""):
         self.log("Battery {} returned None skipping".format(b))
         continue
-      if int(float(result))>int(self.batteries[b]["mid"]):
+      if int(result)>int(self.batteries[b]["mid"]):
         # set green picture      
         self.set_state(b,attributes={"entity_picture":self.full})
       elif int(float(result))>int(self.batteries[b]["low"]):
