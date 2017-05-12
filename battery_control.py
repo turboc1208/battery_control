@@ -61,14 +61,25 @@ class battery_control(appapi.AppDaemon):
     for s in self.batteries:
       self.listen_state(self.state_handler,s,attribute=self.batteries[s]["attribute"])
     self.check_battery_state()
+    self.run_every(self.timer_handler,self.datetime(),5*60)
+    
+  def timer_handler(self,kwargs):
+    self.log("timer Check")
+    self.check_battery_state()
      
   def state_handler(self,entity,attribute,old,new,kwargs):
     currentpic=self.get_state(entity,attribute="entity_picture")
     if currentpic==None:
-      self.check_battery_state()
+      self.check_battery_state(battery=entity)
    
   def check_battery_state(self,**kwargs):
-    for b in self.batteries:
+    blist=[]
+    if "battery" in kwargs:
+      blist.append(kwargs["battery"])
+    else:
+      for b in self.batteries:
+        blist.append(b)
+    for b in blist:
       s=self.batteries[b]["attribute"]
       result=self.get_state(b,s)
       self.log("Battery {} is at {}%".format(b,result))
@@ -92,4 +103,3 @@ class battery_control(appapi.AppDaemon):
           except:
             self.log("{} notify failed {}".format(b,self.batteries[b]["notify"]))
             pass
-      self.log("batteries={}".format(self.batteries[b]))
