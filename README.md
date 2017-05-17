@@ -5,7 +5,7 @@ Battery_Control.py
   Install:
 
   Download the pictures you want.  Green, Yellow and Red battery images 
-  are available in this repository.  
+  are available in this repository.  Update the config below to match the names you give them in your system.
   Place them in the .homeassistant/www directory.  Create the www directory if its not there.
   Put the Battery_control.py app in your appdaemon code storage directory.
   Add the app to your appdaemon.cfg file as follows
