@@ -49,13 +49,11 @@ class=battery_control
 <ul>                  
 <li>HA Sensor name : The full sensor name : sensor.den_sensor_battery
 <li>attribute : the attribute that holds the battery level (state, battery_level, etc)
-<li>high : Values above mid are considered high<br>
-high battery level > mid
-<li>mid : Values less than or equal to mid but above low are considered mid <br>
-mid >= mid battery level > low
-<li>low : Values less than or equal to low are considered Low<br>
-low >= low battery level
-<li>notify : HA notify component to send message.  Only one notify method is allowed per
+<li>levels : one or more levels that are represented by icons on the page.
+<ul><li>value : max value for battery levels contained in that level
+    <li>img : image file to display as icon.  Must be in .homeassistant/www directory.  I know it says /local/, I don't know why, but this is how it works.
+    </ul>
+<li>notify (Optional) : HA notify component to send message.  Only one notify method is allowed per
 sensor but different sensors can use different notify methods.  Sensor A can send a page
 sensor b can send an email.  Just set up notify components in you HA configuration.yaml file.
 </ul>
