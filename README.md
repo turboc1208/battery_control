@@ -13,34 +13,36 @@ Battery_Control.py
 [battery_control]
 module=battery_control
 class=battery_control
-full_img=/local/full_battery_icon.jpg
-mid_img=/local/mid_battery_icon.jpg
-low_img=/local/low_battery_icon.jpg
-batteries={"sensor.den_sensor_battery":{"attribute":"state","low":10,"mid":60,"notify":"EmailChip"},
-           "sensor.office_sensor_battery":{"attribute":"state","low":10,"mid":60,"notify":"EmailSusan"},
-           "sensor.ring_front_door_battery":{"attribute":"state","low":10,"mid":60,"notify":"EmailCharlie"},
-           "zwave.aeotec_zw074_multisensor_gen5_14":{"attribute":"battery_level","low":10,"mid":60,"notify":"TextSam"},
-           "zwave.office_door_4":{"attribute":"battery_level","low":10,"mid":60,"notify":"EmailChip"},
-           "zwave.toolcabinetleft_6":{"attribute":"battery_level","low":10,"mid":60,"notify":"EmailChip"},
-           "sensor.ring_front_door_battery":{"attribute":None,"low":10,"mid":60,"notify":"EmailChip"},
-           "zwave.toolcabinetright_7":{"attribute":"battery_level","low":10,"mid":60,"notify":"EmailChip"}}
-</pre>
+
+  Setup the self.batteries JSON string below as follows All non-numeric values must be in double quotes
+  batteries={"sensor.upstairs_sensor_battery":{"attribute":"state",
+                                               "levels":{"1":{"value":25,"img":"/local/battery1.jpg"},
+                                                     "2":{"value":50,"img":"/local/battery2.jpg"},
+                                                     "3":{"value":75,"img":"/local/battery3.jpg"},
+                                                     "4":{"value":100,"img":"/local/battery4.jpg"}},
+                                               "notify":"EmailChip"},
+           "sensor.office_sensor_battery":{"attribute":"state",
+                                               "levels":{"1":{"value":33,"img":"/local/battery1.jpg"},
+                                                     "2":{"value":66,"img":"/local/battery2.jpg"},
+                                                     "3":{"value":100,"img":"/local/battery4.jpg"}},
+                                             "notify":"EmailChip"}}
+#</pre>
 <ul>
-<li>full_img : image to display for high or full battery levels
-<li>mid_img : image to display for mid battery levels
-<li>low_img : image to display for low battery levels
 </ul><p>
   Setup the self.batteries JSON string below as follows, remember to use double quotes.
   <pre>
   self.batteries={"&LTHA Sensor name for battery state&GT":
                         {"attribute":"&LTAttribute name&GT",
-                         "low":&LTlow level&GT,
-                         "med":&LTmedium level&GT,
+                         "levels":{"1":{"value":%LTMax value for this level%GT,"img":"%LTImageFile%GT"},
+                                   "2":{"value":%LTMax value for this level%GT,"img":"%LTImageFile%GT"},
+                                   "3":{"value":75,"img":"/local/battery3.jpg"},
+                                   "4":{"value":100,"img":"/local/battery4.jpg"}},
                          "notify":"&LTHA Notify Component&GT"},
                   "&LTrepeat for next sensor&GT":
                         {"attribute":"&LTAttribute name&GT",
-                         "low":&LTlow level&GT,
-                         "med":&LTmedium level&GT,
+                         "levels":{"1":{"value":25,"img":"/local/battery1.jpg"},
+                                   "2":{"value":50,"img":"/local/battery2.jpg"},
+                                   "3":{"value":75,"img":"/local/battery3.jpg"}},
                          "notify":"&LTHA Notify Component&GT"},
                   }
                   </pre>
