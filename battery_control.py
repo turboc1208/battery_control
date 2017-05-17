@@ -17,15 +17,17 @@
 #  class=battery_control
 #
 #  Setup the self.batteries JSON string below as follows All non-numeric values must be in double quotes
-#  self.batteries={"<HA Sensor name for battery state>":{"attribute":"<Attribute name>",
-#                                                        "low":<low level>,
-#                                                        "mid":<medium level>,
-#                                                        "notify":"<HA Notification Component>"},
-#                  "<repeat for next sensor>":{"attribute":"<Attribute name>",
-#                                                        "low":<low level>,
-#                                                        "mid":<medium level>,
-#                                                        "notify":"<HA Notification Component>"}
-#                  }
+#  batteries={"sensor.upstairs_sensor_battery":{"attribute":"state",
+#                                               "levels":{"1":{"value":25,"img":"/local/battery1.jpg"},
+#                                                     "2":{"value":50,"img":"/local/battery2.jpg"},
+#                                                     "3":{"value":75,"img":"/local/battery3.jpg"},
+#                                                     "4":{"value":100,"img":"/local/battery4.jpg"}},
+#                                               "notify":"EmailChip"},
+#           "sensor.office_sensor_battery":{"attribute":"state",
+#                                               "levels":{"1":{"value":33,"img":"/local/battery1.jpg"},
+#                                                     "2":{"value":66,"img":"/local/battery2.jpg"},
+#                                                     "3":{"value":100,"img":"/local/battery4.jpg"}},
+#                                             "notify":"EmailChip"}}
 #       
 #######################################################
 import appdaemon.appapi as appapi
@@ -38,18 +40,6 @@ class battery_control(appapi.AppDaemon):
   def initialize(self):
     # self.LOGLEVEL="DEBUG"
     self.log("battery_control App")
-    if "full_img" in self.args:
-      self.full=self.args["full_img"]
-    else:
-      self.log("error full_img must be specified in appdaemon.cfg")
-    if "mid_img" in self.args:
-      self.mid=self.args["mid_img"]
-    else:
-      self.log("error mid_img must be specified in appdaemon.cfg")
-    if "low_img" in self.args:
-      self.low=self.args["low_img"]
-    else:
-      self.log("error low_img must be specified in appdaemon.cfg")
     self.batteries={"empty":"list"}
     if "batteries" in self.args:
       battery_data=""
@@ -76,7 +66,7 @@ class battery_control(appapi.AppDaemon):
     blist=[]
     if "battery" in kwargs:
       blist.append(kwargs["battery"])
-    else:
+    else:   
       for b in self.batteries:
         blist.append(b)
     for b in blist:
@@ -86,23 +76,23 @@ class battery_control(appapi.AppDaemon):
       if (result==None) or (result==""):
         self.log("Battery {} returned None skipping".format(b))
         continue
-      if int(float(result))>int(self.batteries[b]["mid"]):
-        # set green picture      
-        self.set_state(b,attributes={"entity_picture":self.full})
-      elif int(float(result))>int(self.batteries[b]["low"]):
-        # set yellow picture
-        self.set_state(b,attributes={"entity_picture":self.mid})
-      else:
-        # set red picture
-        self.set_state(b,attributes={"entity_picture":self.low})
+      #self.log("batteries[{}]['levels']={}".format(b,self.batteries[b]))
+      for level in sorted(self.batteries[b]["levels"]):
+        #self.log("level={} result={}, level[value]={}".format(level,result,self.batteries[b]["levels"][level]["value"]))
+        if int(float(result))<=self.batteries[b]["levels"][level]["value"]:
+          self.set_state(b,attributes={"entity_picture":self.batteries[b]["levels"][level]["img"]})
+          break
+      self.log("level={}".format(level))
+      if level==len(self.batteries[b]["levels"]):    
         msg="{} battery is at {}%.  Please replace/recharge the batteries".format(b,result)
         if not "last_notification" in self.batteries[b]:
           self.batteries[b]["last_notification"]=self.date()-datetime.timedelta(days=1)
         if self.batteries[b]["last_notification"]<self.date():
           self.batteries[b]["last_notification"]=self.date()
-          try:
-            self.log("Sending low battery alert for {} to {}".format(b,self.batteries[b]["notify"]))
-            self.notify(msg,name=self.batteries[b]["notify"],title="low battery warning")
-          except:
-            self.log("{} notify failed {}".format(b,self.batteries[b]["notify"]))
-            pass
+          if "notify" in self.batteries[b]:
+            try:
+              self.log("Sending low battery alert for {} to {}".format(b,self.batteries[b]["notify"]))
+              self.notify(msg,name=self.batteries[b]["notify"],title="low battery warning")
+            except:
+              self.log("{} notify failed {}".format(b,self.batteries[b]["notify"]))
+              pass
