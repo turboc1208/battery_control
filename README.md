@@ -26,7 +26,7 @@ class=battery_control
                                                      "2":{"value":66,"img":"/local/battery2.jpg"},
                                                      "3":{"value":100,"img":"/local/battery4.jpg"}},
                                              "notify":"EmailChip"}}
-#</pre>
+</pre>
 <ul>
 </ul><p>
   Setup the self.batteries JSON string below as follows, remember to use double quotes.
