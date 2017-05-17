@@ -33,23 +33,23 @@ class=battery_control
   <pre>
   self.batteries={"&LTHA Sensor name for battery state&GT":
                         {"attribute":"&LTAttribute name&GT",
-                         "levels":{"1":{"value":%LTMax value for this level%GT,"img":"%LTImageFile%GT"},
-                                   "2":{"value":%LTMax value for this level%GT,"img":"%LTImageFile%GT"},
-                                   "3":{"value":75,"img":"/local/battery3.jpg"},
-                                   "4":{"value":100,"img":"/local/battery4.jpg"}},
+                         "levels":{"1":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"},
+                                   "2":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"},
+                                   "3":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"},
+                                   "4":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"}},
                          "notify":"&LTHA Notify Component&GT"},
                   "&LTrepeat for next sensor&GT":
                         {"attribute":"&LTAttribute name&GT",
-                         "levels":{"1":{"value":25,"img":"/local/battery1.jpg"},
-                                   "2":{"value":50,"img":"/local/battery2.jpg"},
-                                   "3":{"value":75,"img":"/local/battery3.jpg"}},
+                         "levels":{"1":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"},
+                                   "2":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"},
+                                   "3":{"value":&LTMax value for this level&GT,"img":"&LTImageFile&GT"}},
                          "notify":"&LTHA Notify Component&GT"},
                   }
                   </pre>
 <ul>                  
 <li>HA Sensor name : The full sensor name : sensor.den_sensor_battery
 <li>attribute : the attribute that holds the battery level (state, battery_level, etc)
-<li>levels : one or more levels that are represented by icons on the page.
+<li>levels : one or more levels that are represented by icons on the page.  In the example above, one sensor uses four levels, while the other uses three.
 <ul><li>value : max value for battery levels contained in that level
     <li>img : image file to display as icon.  Must be in .homeassistant/www directory.  I know it says /local/, I don't know why, but this is how it works.
     </ul>
