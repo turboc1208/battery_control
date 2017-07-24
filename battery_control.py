@@ -4,6 +4,9 @@
 #
 #  Set image on battery sensors to show state.
 #
+#  Version  Date       Person      Description
+#   0.2     24JUL2017  CC          First push from new server
+#
 #  Install:
 #
 #  Download the pictures you want.  Green, Yellow and Red battery images 
