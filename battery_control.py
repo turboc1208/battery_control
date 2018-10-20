@@ -19,8 +19,8 @@
 #  module=battery_control
 #  class=battery_control
 #
-#  Setup the self.batteries JSON string below as follows All non-numeric values must be in double quotes
-#  batteries={"sensor.upstairs_sensor_battery":{"attribute":"state",
+#  Setup the self.sensors JSON string below as follows All non-numeric values must be in double quotes
+#  sensors={"sensor.upstairs_sensor_battery":{"attribute":"state",
 #                                               "levels":{"1":{"value":25,"img":"/local/battery1.jpg"},
 #                                                     "2":{"value":50,"img":"/local/battery2.jpg"},
 #                                                     "3":{"value":75,"img":"/local/battery3.jpg"},
@@ -33,69 +33,68 @@
 #                                             "notify":"EmailChip"}}
 #       
 #######################################################
-import appdaemon.appapi as appapi
+import appdaemon.plugins.hass.hassapi as hass
 import datetime
 import time
 import json
                
-class battery_control(appapi.AppDaemon):
+class battery_control(hass.Hass):
 
   def initialize(self):
     # self.LOGLEVEL="DEBUG"
     self.log("battery_control App")
-    self.batteries={"empty":"list"}
-    if "batteries" in self.args:
-      battery_data=""
-      battery_data=self.args["batteries"]
-      self.batteries=json.loads(battery_data)
+    self.sensors={}
+    if "sensors" in self.args:
+      sensor_data=""
+      sensor_data=self.args["sensors"]
+      self.sensors=json.loads(sensor_data)
     else:
-      self.log("error batteries must be specified in appdaemon.cfg")
-    self.log("batteries={}".format(self.batteries))
-    for s in self.batteries:
-      self.listen_state(self.state_handler,s,attribute=self.batteries[s]["attribute"])
-    self.check_battery_state()
-    self.run_every(self.timer_handler,self.datetime(),5*60)
+      self.log("error sensors must be specified in appdaemon.cfg")
+    #self.log("sensors={}".format(self.sensors))
+    for s in self.sensors:
+      for v in self.sensors[s]:
+        #self.log("v={}-{}".format(v,self.sensors[s][v]["attribute"]))  
+        lookup="{}.attributes.battery_level".format(s)
+        cstate=self.get_state(s,attribute=self.sensors[s][v]["attribute"])
+        #self.log("lookup={}, cstate={}".format(lookup,cstate))
+        self.listen_state(self.state_handler,s,attribute=self.sensors[s][v]["attribute"])
+    self.run_every(self.timer_handler,self.datetime(),60)
+    self.log("sensor_control initialization complete")
     
   def timer_handler(self,kwargs):
     self.log("timer Check")
-    self.check_battery_state()
+    for ts in self.sensors:
+      for tv in self.sensors[ts]:
+        self.check_sensor_state(ts,self.sensors[ts][tv]["attribute"],"timer")
+    self.log("Timer check completed")
      
   def state_handler(self,entity,attribute,old,new,kwargs):
-    currentpic=self.get_state(entity,attribute="entity_picture")
-    if currentpic==None:
-      self.check_battery_state(battery=entity)
+    self.check_sensor_state(entity,attribute,"state")
    
-  def check_battery_state(self,**kwargs):
-    blist=[]
-    if "battery" in kwargs:
-      blist.append(kwargs["battery"])
-    else:   
-      for b in self.batteries:
-        blist.append(b)
-    for b in blist:
-      s=self.batteries[b]["attribute"]
-      result=self.get_state(b,s)
-      self.log("Battery {} is at {}%".format(b,result))
-      if (result==None) or (result==""):
-        self.log("Battery {} returned None skipping".format(b))
-        continue
-      #self.log("batteries[{}]['levels']={}".format(b,self.batteries[b]))
-      for level in sorted(self.batteries[b]["levels"]):
-        #self.log("level={} result={}, level[value]={}".format(level,result,self.batteries[b]["levels"][level]["value"]))
-        if int(float(result))<=self.batteries[b]["levels"][level]["value"]:
-          self.set_state(b,attributes={"entity_picture":self.batteries[b]["levels"][level]["img"]})
-          break
-      self.log("level={}".format(level))
-      if level==len(self.batteries[b]["levels"]):    
-        msg="{} battery is at {}%.  Please replace/recharge the batteries".format(b,result)
-        if not "last_notification" in self.batteries[b]:
-          self.batteries[b]["last_notification"]=self.date()-datetime.timedelta(days=1)
-        if self.batteries[b]["last_notification"]<self.date():
-          self.batteries[b]["last_notification"]=self.date()
-          if "notify" in self.batteries[b]:
-            try:
-              self.log("Sending low battery alert for {} to {}".format(b,self.batteries[b]["notify"]))
-              self.notify(msg,name=self.batteries[b]["notify"],title="low battery warning")
-            except:
-              self.log("{} notify failed {}".format(b,self.batteries[b]["notify"]))
-              pass
+  def check_sensor_state(self,sensor,attribute,source):
+    cstate=self.get_state(sensor,attribute=attribute)
+    #self.log("check_sensor_state({},{},{})".format(sensor,attribute,source))
+    vtyp,vsensor=self.split_entity(sensor)
+    #self.log("vtyp={}, vsensor={}, sensor={},self.sensors[sensor]={}".format(vtyp,vsensor,sensor,self.sensors[sensor]))
+    for ct in self.sensors[sensor]:
+      #self.log("ct={}".format(ct))
+      newsensor="sensor.{}_{}".format(vsensor,self.sensors[sensor][ct]["postfix"])
+      #self.log("newsensor={}".format(newsensor))
+      if ct=="value":
+        self.log("setting state for {} to {}".format(newsensor,cstate))
+        self.set_state(newsensor,state=cstate)
+      elif ct=="text":
+        for ev in sorted(self.sensors[sensor]["text"]["values"],key=self.my_key):
+          #self.log("{} - ev={}-{}".format(sensor,ev,self.sensors[sensor]["text"]["values"][ev]))
+          if float(cstate) <= float(ev):
+            self.set_state(newsensor,state=self.sensors[sensor]["text"]["values"][ev])
+            self.log("set state of {} to {}".format(newsensor,self.sensors[sensor]["text"]["values"][ev]))
+            break
+      else:
+        self.log("type={} - unknown",format(ct))
+
+  def my_key(self,dict_key):
+    try:
+      return float(dict_key)
+    except ValueError:
+      return dict_key
