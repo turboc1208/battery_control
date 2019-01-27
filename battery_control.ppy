@@ -72,27 +72,30 @@ class battery_control(hass.Hass):
     self.check_sensor_state(entity,attribute,"state")
    
   def check_sensor_state(self,sensor,attribute,source):
-    cstate=self.get_state(sensor,attribute=attribute)
-    #self.log("check_sensor_state({},{},{})".format(sensor,attribute,source))
-    vtyp,vsensor=self.split_entity(sensor)
-    #self.log("vtyp={}, vsensor={}, sensor={},self.sensors[sensor]={}".format(vtyp,vsensor,sensor,self.sensors[sensor]))
-    for ct in self.sensors[sensor]:
-      #self.log("ct={}".format(ct))
-      if ct in ["text","value"]:
-        newsensor="sensor.{}_{}".format(vsensor,self.sensors[sensor][ct]["postfix"])
-        #self.log("newsensor={}".format(newsensor))
-        if ct=="value":
-          self.log("setting state for {} to {}".format(newsensor,cstate))
-          self.set_state(newsensor,state=cstate)
-        elif ct=="text":
-          for ev in sorted(self.sensors[sensor]["text"]["values"],key=self.my_key):
-            #self.log("{} - ev={}-{}".format(sensor,ev,self.sensors[sensor]["text"]["values"][ev]))
-            if float(cstate) <= float(ev):
-              self.set_state(newsensor,state=self.sensors[sensor]["text"]["values"][ev])
-              self.log("set state of {} to {}".format(newsensor,self.sensors[sensor]["text"]["values"][ev]))
-              break
-        else:
-          self.log("type={} - unknown",format(ct))
+    if self.entity_exists(sensor):
+      cstate=self.get_state(sensor,attribute=attribute)
+      #self.log("check_sensor_state({},{},{})".format(sensor,attribute,source))
+      vtyp,vsensor=self.split_entity(sensor)
+      #self.log("vtyp={}, vsensor={}, sensor={},self.sensors[sensor]={}".format(vtyp,vsensor,sensor,self.sensors[sensor]))
+      for ct in self.sensors[sensor]:
+        #self.log("ct={}".format(ct))
+        if ct in ["text","value"]:
+          newsensor="sensor.{}_{}".format(vsensor,self.sensors[sensor][ct]["postfix"])
+          #self.log("newsensor={}".format(newsensor))
+          if ct=="value":
+            self.log("setting state for {} to {}".format(newsensor,cstate))
+            self.set_state(newsensor,state=cstate)
+          elif ct=="text":
+            for ev in sorted(self.sensors[sensor]["text"]["values"],key=self.my_key):
+              #self.log("{} - ev={}-{}".format(sensor,ev,self.sensors[sensor]["text"]["values"][ev]))
+              if float(cstate) <= float(ev):
+                self.set_state(newsensor,state=self.sensors[sensor]["text"]["values"][ev])
+                self.log("set state of {} to {}".format(newsensor,self.sensors[sensor]["text"]["values"][ev]))
+                break
+          else:
+            self.log("type={} - unknown",format(ct))
+    else:
+      self.log("Error entity {} does not exist")
 
   def my_key(self,dict_key):
     try:
